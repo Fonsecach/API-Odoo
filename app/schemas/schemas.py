@@ -6,9 +6,10 @@ de dados de entrada e saída na API de integração com o Odoo.
 """
 
 from datetime import date, datetime
-from typing import List, Optional
+import re
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, validator
 
 
 # Configuração comum para todos os modelos
@@ -251,6 +252,37 @@ class TaskSaleOrderUpdate(BaseModel):
     """Modelo para vincular tarefa a pedido de venda."""
     task_id: int
     sale_order_id: int
+
+# --- Esquemas de chamados ---
+
+class TicketCreateSchema(BaseModel):
+    stage_id: int = Field(default=1)
+    team_id: int = Field(default=1)
+    user_id: int = Field(default=32)
+    partner_id: int
+    name: str = Field(..., max_length=255)
+    description: str
+    priority: str = Field(default='2')
+    x_studio_selection_field_4el_1ianiqtqf: str = Field(..., alias="tipo_chamado")
+
+    # @validator('name')
+    # def validate_name_format(cls, v):
+    #     # Nova regex para validar formato RAZÃO SOCIAL + CNPJ numérico
+    #     if not re.match(r'^[A-ZÀ-Ú\s]+\s\d{14}$', v):
+    #         raise ValueError("Formato inválido. Use: RAZÃO SOCIAL EM MAIÚSCULAS + 14 DÍGITOS DO CNPJ")
+    #     return v
+
+    @validator('x_studio_selection_field_4el_1ianiqtqf')
+    def validate_tipo_chamado(cls, v):
+        if v not in ("1", "2"):
+            raise ValueError("Tipo de chamado inválido. Use 1 ou 2")
+        return v
+
+class TicketResponse(BaseModel):
+    ticket_id: Optional[int] = None
+    success: bool
+    error: Optional[str] = None
+    documents: List[Dict[str, Any]] = []
 
 
 # ------------ Outros Esquemas ------------
